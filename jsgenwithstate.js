@@ -1,3 +1,7 @@
+/**
+ * Generator persistence support. Allows the generator to fast-forward on load,
+ * to the persisted value of state.ctr
+*/
 
 /**
  * Wrapper to create one-param generator around a two param generator,
@@ -13,31 +17,26 @@ export function generatorWithNewState(generatorWithStateInjected) {
   };
 }
 
-/*
-Generator persistence support. Allows the generator to fast-forward on load,
-to the persisted value of state.ctr
-
-At start:
-initStateOnLoad(state)
-
-Around each yield:
-yield* yieldIfNeeded(state,blahblahblah)
-
-*/
-
+/**
+ * At start of outermost generator, call: initStateOnLoad(state)
+ *
+ * @param {{ targetCtr: number | null; ctr: number; }} state
+ */
 export function initStateOnLoad(state) {
-	if(state.targetCtr == null || 
-	state.targetCtr < state.ctr) {
-		state.targetCtr = state.ctr
-	} 
-	state.ctr = 0
+  if (state.targetCtr == null || state.targetCtr < state.ctr) {
+    state.targetCtr = state.ctr;
+  }
+  state.ctr = 0;
 }
 
-export function* yieldIfNeeded(state,val) {
-	state.ctr++
-	if(state.targetCtr == null ||
-		state.ctr > state.targetCtr 
-	) {
-		yield val
-	}
+/**
+ * Replace each 'yield xyz' with 'yield* yieldIfNeeded(state, xyz)'
+ * @param {{ ctr: number; targetCtr: number | null; }} state
+ * @param {any} val
+ */
+export function* yieldIfNeeded(state, val) {
+  state.ctr++;
+  if (state.targetCtr == null || state.ctr > state.targetCtr) {
+    yield val;
+  }
 }
